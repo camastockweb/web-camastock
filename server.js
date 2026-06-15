@@ -13,7 +13,7 @@ const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const appUrl = process.env.APP_URL || process.env.VITE_APP_URL || 'http://localhost:5173';
+const appUrl = process.env.APP_URL || process.env.VITE_APP_URL || 'https://web-camastock.vercel.app';
 const port = Number(process.env.PORT || 3000);
 const allowedOrigins = (process.env.CORS_ORIGINS || appUrl)
   .split(',')
