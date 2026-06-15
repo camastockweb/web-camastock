@@ -297,6 +297,7 @@ app.post('/api/crear-sesion', async (req, res) => {
       quantity: item.q,
     }));
 
+    // AQUÍ MANTENEMOS EL METADATA PARA ENVIAR EL CARRITO Y EL DESCUENTO DE STOCK
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
