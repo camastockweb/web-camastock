@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingBag, Loader2, AlertCircle } from 'lucide-react';
+import { ShoppingBag, Loader2, AlertCircle, ArrowUpRight } from 'lucide-react';
 import { useCart } from '@/lib/CartContext';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 
 export default function Productos() {
   const { addToCart } = useCart();
+  const navigate = useNavigate();
   const [productos, setProductos] = useState([]);
   const [categorias, setCategorias] = useState(['TODOS']);
   const [loading, setLoading] = useState(true);
@@ -20,7 +22,7 @@ export default function Productos() {
           .order('name', { ascending: true });
 
         if (!catError && catData) {
-          const listaDinamica = ['TODOS', ...catData.map(cat => cat.name.toUpperCase())];
+          const listaDinamica = ['TODOS', ...catData.map((cat) => cat.name.toUpperCase())];
           setCategorias(listaDinamica);
         }
 
@@ -33,7 +35,7 @@ export default function Productos() {
           setProductos(prodData);
         }
       } catch (error) {
-        console.error("Error sincronizando los datos de la tienda:", error);
+        console.error('Error sincronizando los datos de la tienda:', error);
       } finally {
         setLoading(false);
       }
@@ -50,10 +52,11 @@ export default function Productos() {
   return (
     <div className="min-h-screen bg-white pt-32 pb-24">
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
-        
-        {/* Cabecera */}
         <div className="text-center max-w-2xl mx-auto mb-12">
-          <h1 className="font-bold mb-4" style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(2.5rem, 5vw, 4rem)', color: '#1A1A1A' }}>
+          <h1
+            className="font-bold mb-4"
+            style={{ fontFamily: 'Playfair Display, serif', fontSize: 'clamp(2.5rem, 5vw, 4rem)', color: '#1A1A1A' }}
+          >
             Colección
           </h1>
           <p className="text-gray-500 text-base" style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -61,7 +64,6 @@ export default function Productos() {
           </p>
         </div>
 
-        {/* Pestañas de Filtrado */}
         <div className="flex flex-wrap justify-center gap-3 mb-16">
           {categorias.map((cat) => (
             <button
@@ -74,7 +76,7 @@ export default function Productos() {
               }`}
               style={{
                 fontFamily: 'Inter, sans-serif',
-                backgroundColor: categoriaActiva === cat ? '#C0392B' : undefined
+                backgroundColor: categoriaActiva === cat ? '#C0392B' : undefined,
               }}
             >
               {cat}
@@ -82,7 +84,6 @@ export default function Productos() {
           ))}
         </div>
 
-        {/* Carga */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 text-gray-400">
             <Loader2 className="w-8 h-8 animate-spin text-[#C0392B] mb-2" />
@@ -93,26 +94,32 @@ export default function Productos() {
             <p className="text-gray-400 text-sm font-medium">No hay artículos disponibles en esta categoría actualmente.</p>
           </div>
         ) : (
-          /* Parrilla de Productos */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
             {productosFiltrados.map((product) => {
-              const estaAgotado = product.stock <= 0; // Comprobación en caliente del stock
+              const estaAgotado = Number(product.stock || 0) <= 0;
 
               return (
-                <div 
-                  key={product.id} 
+                <div
+                  key={product.id}
                   className={`group flex flex-col bg-white rounded-2xl border overflow-hidden p-4 transition-all duration-300 hover:shadow-xl hover:border-gray-200 ${estaAgotado ? 'opacity-75' : ''}`}
                   style={{ borderColor: 'rgba(26,26,26,0.06)' }}
+                  role="link"
+                  tabIndex={0}
+                  onClick={() => navigate(`/productos/${product.id}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      navigate(`/productos/${product.id}`);
+                    }
+                  }}
                 >
-                  {/* Contenedor Imagen con Sello */}
                   <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-[#F8F6F3] mb-5">
-                    <img 
-                      src={product.image} 
-                      alt={product.name} 
+                    <img
+                      src={product.image}
+                      alt={product.name}
                       className={`h-full w-full object-cover transition-transform duration-500 ${estaAgotado ? 'grayscale' : 'group-hover:scale-105'}`}
                     />
-                    
-                    {/* Cartel de agotado superpuesto a la foto */}
+
                     {estaAgotado ? (
                       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
                         <span className="bg-white text-gray-900 font-bold text-xs uppercase tracking-wider px-4 py-2 rounded-lg shadow-md flex items-center gap-1.5">
@@ -120,16 +127,21 @@ export default function Productos() {
                         </span>
                       </div>
                     ) : product.made_in_spain ? (
-                      <span 
+                      <span
                         className="absolute top-3 left-3 text-[10px] font-bold text-white px-2.5 py-1 rounded shadow-sm"
                         style={{ backgroundColor: '#C0392B', fontFamily: 'Inter, sans-serif' }}
                       >
                         Fabricado en España
                       </span>
                     ) : null}
+
+                    <div className="absolute bottom-3 right-3">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur text-[10px] font-bold uppercase tracking-wider text-gray-700 shadow-sm">
+                        Ver ficha <ArrowUpRight className="w-3 h-3" />
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Textos Informativos */}
                   <div className="flex-grow flex flex-col">
                     <span className="text-[10px] font-bold tracking-widest uppercase text-red-600 mb-1" style={{ fontFamily: 'Inter, sans-serif' }}>
                       {product.category}
@@ -137,35 +149,47 @@ export default function Productos() {
                     <h3 className="font-bold text-lg mb-4 text-gray-900 line-clamp-2" style={{ fontFamily: 'Playfair Display, serif' }}>
                       {product.name}
                     </h3>
-                    
-                    {/* Fila inferior de Precio y Botón Inteligente */}
-                    <div className="mt-auto pt-4 border-t flex items-center justify-between" style={{ borderColor: 'rgba(26,26,26,0.06)' }}>
+
+                    <div className="mt-auto pt-4 border-t flex items-center justify-between gap-3" style={{ borderColor: 'rgba(26,26,26,0.06)' }}>
                       <span className="text-xl font-black text-gray-900" style={{ fontFamily: 'Inter, sans-serif' }}>
                         {product.price}€
                       </span>
-                      
-                      {estaAgotado ? (
-                        <span className="text-xs font-bold uppercase text-gray-400 tracking-wider">
-                          Sin existencias
-                        </span>
-                      ) : (
-                        <button 
-                          onClick={() => addToCart(product)}
-                          className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-colors hover:text-red-800" 
-                          style={{ color: '#C0392B', fontFamily: 'Inter, sans-serif' }}
+
+                      <div className="flex items-center gap-2">
+                        {estaAgotado ? (
+                          <span className="text-xs font-bold uppercase text-gray-400 tracking-wider">
+                            Sin existencias
+                          </span>
+                        ) : (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              addToCart(product);
+                            }}
+                            className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-colors hover:text-red-800"
+                            style={{ color: '#C0392B', fontFamily: 'Inter, sans-serif' }}
+                          >
+                            Añadir <ShoppingBag className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/productos/${product.id}`);
+                          }}
+                          className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-colors text-gray-700 hover:text-gray-900"
                         >
-                          Añadir al carrito <ShoppingBag className="w-3.5 h-3.5" />
+                          Ficha <ArrowUpRight className="w-3.5 h-3.5" />
                         </button>
-                      )}
+                      </div>
                     </div>
                   </div>
-
                 </div>
               );
             })}
           </div>
         )}
-
       </div>
     </div>
   );

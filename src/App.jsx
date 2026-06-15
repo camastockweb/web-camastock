@@ -12,6 +12,7 @@ import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Productos from './pages/Productos'; 
+import ProductoDetalle from './pages/ProductoDetalle';
 import Navbar from './components/landing/Navbar'; 
 import { CartProvider } from '@/lib/CartContext';
 import Carrito from './pages/Carrito';
@@ -49,6 +50,8 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/productos" element={<Productos />} />
+      <Route path="/productos/:id" element={<ProductoDetalle />} />
+      <Route path="/producto/:id" element={<ProductoDetalle />} />
       <Route path="/carrito" element={<Carrito />} />
       <Route path="/exito" element={<Exito />} />
       <Route path="/register" element={<Register />} />
