@@ -316,18 +316,7 @@ app.post('/api/crear-sesion', async (req, res) => {
           f: shippingAddress.datos_facturacion,
         }),
         cart: JSON.stringify(compactCart),
-      },
-      ...(shippingAddress.metodo_entrega === 'envio'
-        ? {
-            shipping_address_collection: {
-              allowed_countries: ['ES'],
-            },
-          }
-        : {}),
-      billing_address_collection: 'required',
-      phone_number_collection: {
-        enabled: true,
-      },
+      }
     });
 
     return res.json({ url: session.url, sessionId: session.id });
