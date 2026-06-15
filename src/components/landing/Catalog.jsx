@@ -1,84 +1,48 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useScrollFadeIn } from '@/hooks/useScrollFadeIn';
-import { ArrowUpRight } from 'lucide-react';
-
-const categories = ['Todos', 'Colchones', 'Canapés', 'Cabeceros', 'Camas articuladas', 'Somieres', 'Almohadas', 'Nórdicos', 'Protectores'];
-
-const products = [
-  {
-    id: 1,
-    name: 'Colchón Viscoelástico Premium',
-    category: 'Colchones',
-    madeInSpain: true,
-    image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&q=80&auto=format&fit=crop',
-    from: 'Desde 349€',
-  },
-  {
-    id: 2,
-    name: 'Canapé Abatible de Madera',
-    category: 'Canapés',
-    madeInSpain: true,
-    image: 'https://images.unsplash.com/photo-1505693314120-0d443867891c?w=600&q=80&auto=format&fit=crop',
-    from: 'Desde 299€',
-  },
-  {
-    id: 3,
-    name: 'Cabecero Tapizado',
-    category: 'Cabeceros',
-    madeInSpain: true,
-    image: 'https://images.unsplash.com/photo-1540518614846-7eded433c457?w=600&q=80&auto=format&fit=crop',
-    from: 'Desde 149€',
-  },
-  {
-    id: 4,
-    name: 'Cama Articulada Eléctrica',
-    category: 'Camas articuladas',
-    madeInSpain: false,
-    image: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=600&q=80&auto=format&fit=crop',
-    from: 'Desde 499€',
-  },
-  {
-    id: 5,
-    name: 'Somier de Láminas',
-    category: 'Somieres',
-    madeInSpain: true,
-    image: 'https://images.unsplash.com/photo-1631049552057-403cdb8f0658?w=600&q=80&auto=format&fit=crop',
-    from: 'Desde 129€',
-  },
-  {
-    id: 6,
-    name: 'Almohada Viscoelástica',
-    category: 'Almohadas',
-    madeInSpain: true,
-    image: 'https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?w=600&q=80&auto=format&fit=crop',
-    from: 'Desde 39€',
-  },
-  {
-    id: 7,
-    name: 'Nórdico All-Seasons',
-    category: 'Nórdicos',
-    madeInSpain: false,
-    image: 'https://images.unsplash.com/photo-1588515724527-074a7a56616c?w=600&q=80&auto=format&fit=crop',
-    from: 'Desde 79€',
-  },
-  {
-    id: 8,
-    name: 'Protector Impermeable',
-    category: 'Protectores',
-    madeInSpain: true,
-    image: 'https://images.unsplash.com/photo-1540518614846-7eded433c457?w=600&q=80&auto=format&fit=crop',
-    from: 'Desde 29€',
-  },
-];
+import { ArrowUpRight, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { supabase } from '@/lib/supabase'; // <-- Importamos Supabase
 
 export default function Catalog() {
-  const [activeCategory, setActiveCategory] = useState('Todos');
+  const [activeCategory, setActiveCategory] = useState('TODOS');
+  const [categories, setCategories] = useState(['TODOS']);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
   const ref = useScrollFadeIn();
 
-  const filtered = activeCategory === 'Todos'
+  // Descargamos los datos reales de Supabase al cargar la página
+  useEffect(() => {
+    const fetchCatalog = async () => {
+      setLoading(true);
+      try {
+        // 1. Traemos las categorías
+        const { data: catData } = await supabase.from('categories').select('name').order('name', { ascending: true });
+        if (catData) {
+          setCategories(['TODOS', ...catData.map(c => c.name.toUpperCase())]);
+        }
+
+        // 2. Traemos los productos reales (Limitamos a los 8 más recientes para no saturar la página principal)
+        const { data: prodData } = await supabase.from('products').select('*').order('created_at', { ascending: false }).limit(8);
+        if (prodData) {
+          setProducts(prodData);
+        }
+      } catch (error) {
+        console.error("Error cargando el catálogo de inicio:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCatalog();
+  }, []);
+
+  // Filtro inteligente dinámico
+  const filtered = activeCategory === 'TODOS'
     ? products
-    : products.filter(p => p.category === activeCategory);
+    : products.filter(p => p.category.toLowerCase().trim() === activeCategory.toLowerCase().trim());
 
   return (
     <section
@@ -88,7 +52,7 @@ export default function Catalog() {
       ref={ref}
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
-        {/* Header */}
+        {/* Cabecera */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-14">
           <div>
             <div className="flex items-center gap-3 mb-5">
@@ -119,7 +83,7 @@ export default function Catalog() {
           </p>
         </div>
 
-        {/* Filter Tabs */}
+        {/* Pestañas de Filtrado (Dinámicas) */}
         <div className="flex flex-wrap gap-2 mb-12">
           {categories.map((cat) => (
             <button
@@ -139,101 +103,117 @@ export default function Catalog() {
           ))}
         </div>
 
-        {/* Product Grid */}
-        <motion.div
-          layout
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
-        >
-          <AnimatePresence mode="popLayout">
-            {filtered.map((product) => (
-              <motion.div
-                key={product.id}
-                layout
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.35 }}
-                className="product-card group overflow-hidden cursor-pointer"
-                style={{
-                  backgroundColor: '#F8F6F3',
-                  border: '1px solid rgba(26,26,26,0.07)',
-                  borderRadius: '10px',
-                  transition: 'border-color 0.3s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(192,57,43,0.4)'}
-                onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(26,26,26,0.07)'}
-              >
-                {/* Image */}
-                <div className="relative overflow-hidden aspect-[4/3]">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-cover"
-                  />
-                  {/* Dark overlay on hover */}
-                  <div
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                    style={{ backgroundColor: 'rgba(248,246,243,0.3)' }}
-                  />
-                  {/* Made in Spain badge */}
-                  {product.madeInSpain && (
+        {/* Pantalla de carga mientras trae los datos */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+            <Loader2 className="w-8 h-8 animate-spin text-[#C0392B] mb-2" />
+            <p className="text-sm">Cargando escaparate...</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-20 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+            <p className="text-gray-400 text-sm">No hay artículos disponibles en esta categoría.</p>
+          </div>
+        ) : (
+          /* Parrilla de Productos */
+          <motion.div
+            layout
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
+          >
+            <AnimatePresence mode="popLayout">
+              {filtered.map((product) => (
+                <motion.div
+                  key={product.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.35 }}
+                  className="product-card group overflow-hidden cursor-pointer flex flex-col"
+                  style={{
+                    backgroundColor: '#F8F6F3',
+                    border: '1px solid rgba(26,26,26,0.07)',
+                    borderRadius: '10px',
+                    transition: 'border-color 0.3s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(192,57,43,0.4)'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(26,26,26,0.07)'}
+                >
+                  {/* Contenedor Imagen */}
+                  <div className="relative overflow-hidden aspect-[4/3] shrink-0">
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
                     <div
-                      className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 text-xs font-semibold"
-                      style={{
-                        backgroundColor: 'rgba(192,57,43,0.9)',
-                        color: '#fff',
-                        fontFamily: 'Inter, sans-serif',
-                        backdropFilter: 'blur(4px)',
-                      }}
-                    >
-                      ES · España
-                    </div>
-                  )}
-                </div>
-
-                {/* Info */}
-                <div className="p-5">
-                  <p
-                    className="text-xs font-medium tracking-widest uppercase mb-1"
-                    style={{ color: '#C0392B', fontFamily: 'Inter, sans-serif' }}
-                  >
-                    {product.category}
-                  </p>
-                  <h3
-                    className="mb-2"
-                    style={{
-                      fontFamily: 'Playfair Display, serif',
-                      fontSize: '1.05rem',
-                      color: '#1A1A1A',
-                      fontWeight: 600,
-                      }}
+                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      style={{ backgroundColor: 'rgba(248,246,243,0.3)' }}
+                    />
+                    {/* Sello Fabricado en España (Mapeado de la base de datos) */}
+                    {product.made_in_spain && (
+                      <div
+                        className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 text-xs font-semibold"
+                        style={{
+                          backgroundColor: 'rgba(192,57,43,0.9)',
+                          color: '#fff',
+                          fontFamily: 'Inter, sans-serif',
+                          backdropFilter: 'blur(4px)',
+                        }}
                       >
-                      {product.name}
-                  </h3>
-                  <p
-                    className="text-sm mb-4"
-                    style={{ color: 'rgba(26,26,26,0.5)', fontFamily: 'Inter, sans-serif' }}
-                  >
-                    {product.from}
-                  </p>
-                  <a
-                    href="#contacto"
-                    className="inline-flex items-center gap-1 text-xs font-semibold tracking-widest uppercase transition-all"
-                    style={{
-                      color: '#C0392B',
-                      fontFamily: 'Inter, sans-serif',
-                      textDecoration: 'none',
-                    }}
-                  >
-                    Ver más <ArrowUpRight className="w-3 h-3" />
-                  </a>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
+                        ES · España
+                      </div>
+                    )}
+                  </div>
 
-        {/* CTA */}
+                  {/* Información del Producto */}
+                  <div className="p-5 flex flex-col flex-grow">
+                    <p
+                      className="text-xs font-medium tracking-widest uppercase mb-1"
+                      style={{ color: '#C0392B', fontFamily: 'Inter, sans-serif' }}
+                    >
+                      {product.category}
+                    </p>
+                    <h3
+                      className="mb-2 line-clamp-2"
+                      style={{
+                        fontFamily: 'Playfair Display, serif',
+                        fontSize: '1.05rem',
+                        color: '#1A1A1A',
+                        fontWeight: 600,
+                        }}
+                        >
+                        {product.name}
+                    </h3>
+                    
+                    <div className="mt-auto pt-2">
+                      <p
+                        className="text-sm font-bold mb-4 text-gray-900"
+                        style={{ fontFamily: 'Inter, sans-serif' }}
+                      >
+                        {product.price}€
+                      </p>
+                      
+                      {/* Enlace que ahora lleva a la tienda real en lugar de contacto */}
+                      <Link
+                        to="/productos"
+                        className="inline-flex items-center gap-1 text-xs font-semibold tracking-widest uppercase transition-all"
+                        style={{
+                          color: '#C0392B',
+                          fontFamily: 'Inter, sans-serif',
+                          textDecoration: 'none',
+                        }}
+                      >
+                        Ver en tienda <ArrowUpRight className="w-3 h-3" />
+                      </Link>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        )}
+
+        {/* CTA Final */}
         <div className="mt-16 text-center">
           <p
             className="mb-6"
