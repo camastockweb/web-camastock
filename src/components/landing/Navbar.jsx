@@ -6,7 +6,7 @@ import { useCart } from '@/lib/CartContext';
 import { useAuth } from '@/lib/AuthContext'; 
 
 const navLinks = [
-  { label: 'Inico', href: '/' },
+  { label: 'Inicio', href: '/' },
   { label: 'Productos', href: '/productos' },
   { label: 'Financiación', href: '/#financiacion' },
   { label: 'Reseñas', href: '/#resenas' },
